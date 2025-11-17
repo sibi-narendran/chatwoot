@@ -94,19 +94,10 @@ Rails.application.configure do
     logger.formatter = config.log_formatter
     config.logger    = ActiveSupport::TaggedLogging.new(logger)
   else
-    log_path = Rails.root.join('log', "#{Rails.env}.log")
-    # Ensure log directory exists
-    FileUtils.mkdir_p(log_path.dirname.to_s)
-    FileUtils.touch(log_path.to_s) unless log_path.exist?
-
-    begin
-      config.logger = ActiveSupport::Logger.new(log_path, 1, ENV.fetch('LOG_SIZE', '1024').to_i.megabytes)
-    rescue Errno::ENOENT, Errno::EACCES => e
-      fallback_logger = ActiveSupport::Logger.new($stdout)
-      fallback_logger.formatter = config.log_formatter
-      fallback_logger.warn("Falling back to STDOUT logger: #{e.message}")
-      config.logger = ActiveSupport::TaggedLogging.new(fallback_logger)
-    end
+    # In other environments (like a build container), log to stdout
+    logger           = ActiveSupport::Logger.new($stdout)
+    logger.formatter = config.log_formatter
+    config.logger    = ActiveSupport::TaggedLogging.new(logger)
   end
 
   # Bullet configuration to fix the N+1 queries
