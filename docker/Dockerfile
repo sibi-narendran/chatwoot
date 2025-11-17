@@ -4,6 +4,7 @@ FROM ruby:3.4.4-alpine3.21 AS base
 
 RUN apk update && apk add --no-cache \
   build-base \
+  libffi-dev \
   git \
   imagemagick \
   libpq \
