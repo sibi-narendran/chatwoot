@@ -77,12 +77,25 @@ Rails.application.configure do
 
   # Use a different logger for distributed setups.
   # require 'syslog/logger'
-  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('RAILS_LOG_TO_STDOUT', false))
+  if ENV['RAILS_LOG_TO_STDOUT'].present? && ENV['RAILS_LOG_TO_STDOUT'] != 'false'
+    logger           = ActiveSupport::Logger.new($stdout)
+    logger.formatter = config.log_formatter
+    config.logger    = ActiveSupport::TaggedLogging.new(logger)
+  elsif ENV['SECRET_KEY_BASE'] == 'precompile_placeholder'
+    # During asset precompilation in Docker, use stdout logging
+    logger           = ActiveSupport::Logger.new($stdout)
+    logger.formatter = config.log_formatter
+    config.logger    = ActiveSupport::TaggedLogging.new(logger)
+  elsif File.exist?('/.dockerenv') || ENV['DOCKER_CONTAINER'].present?
+    # In Docker containers, log to stdout by default
     logger           = ActiveSupport::Logger.new($stdout)
     logger.formatter = config.log_formatter
     config.logger    = ActiveSupport::TaggedLogging.new(logger)
   else
-    config.logger = ActiveSupport::Logger.new(Rails.root.join('log', "#{Rails.env}.log"), 1, ENV.fetch('LOG_SIZE', '1024').to_i.megabytes)
+    log_path = Rails.root.join('log', "#{Rails.env}.log")
+    # Ensure log directory exists
+    FileUtils.mkdir_p(log_path.dirname) unless log_path.dirname.exist?
+    config.logger = ActiveSupport::Logger.new(log_path, 1, ENV.fetch('LOG_SIZE', '1024').to_i.megabytes)
   end
 
   # Bullet configuration to fix the N+1 queries
