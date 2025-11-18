@@ -108,8 +108,8 @@ Rails.application.configure do
   end
 
   # Verifies that versions and hashed value of the package contents in the project's package.json
-  config.webpacker.check_yarn_integrity = false
+  config.webpacker.check_yarn_integrity = false if config.respond_to?(:webpacker)
 
-  config.middleware.use Tidewave::Middleware if Tidewave.config.enabled
+  config.middleware.use Tidewave::Middleware if defined?(Tidewave) && Tidewave.respond_to?(:config) && Tidewave.config.enabled
 end
 
